@@ -1,0 +1,59 @@
+# Coordinator-only deployment. Never launched by implementation tests.
+name: agentfleet-document-service-production
+services:
+  db:
+    volumes: !override [production_postgres:/var/lib/postgresql/data]
+  odoo:
+    environment:
+      DOCUMENT_SERVICE_MODE: production
+      PRODUCTION_ACCEPTED: ${PRODUCTION_ACCEPTED:-no}
+    volumes: !override
+      - production_odoo:/var/lib/odoo
+      - ${PRODUCTION_RUNTIME_DIR:?Set separate production runtime path}/odoo.conf:/run/config/odoo.conf:ro
+      - ${PRODUCTION_RUNTIME_DIR}/service.token:/run/config/service.token:ro
+      - ${PRODUCTION_RUNTIME_DIR}/worker.token:/run/config/worker.token:ro
+      - ${PRODUCTION_RUNTIME_DIR}/seal.token:/run/config/seal.token:ro
+      - ./addons:/mnt/addons:ro
+      - ./vendor/sign:/mnt/sign:ro
+      - ./vendor/dms:/mnt/dms:ro
+  ingress:
+    ports: !reset []
+  sealer:
+    image: agentfleet-document-sealer:local
+    build:
+      context: .
+      dockerfile: service/sealer.Dockerfile
+    entrypoint: [python, /service/sealer.py]
+    volumes: !override
+      - ${PRODUCTION_RUNTIME_DIR}/seal.key:/run/seal/key.pem:ro
+      - ${PRODUCTION_RUNTIME_DIR}/seal.crt:/run/seal/cert.pem:ro
+      - ${PRODUCTION_RUNTIME_DIR}/seal.token:/run/seal/auth.token:ro
+    networks: !override [sealing]
+  mail:
+    environment:
+      DOCUMENT_SERVICE_MODE: production
+      PRODUCTION_ACCEPTED: ${PRODUCTION_ACCEPTED:-no}
+      RESEND_API_KEY_FILE: /run/mail-secret/resend.key
+      DMS_CALLBACK_URL: https://packaging-ops-261008.web.app/api/v1/webhooks/dms
+    volumes: !override
+      - ./service:/service:ro
+      - ${PRODUCTION_RUNTIME_DIR}/worker.token:/run/config/worker.token:ro
+      - ${PRODUCTION_RUNTIME_DIR}/callback.key:/run/config/callback.key:ro
+      - ${PRODUCTION_RUNTIME_DIR}/resend.key:/run/mail-secret/resend.key:ro
+    networks: [private, mail_egress]
+  caddy:
+    image: caddy:2.10.2
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./service/Caddyfile:/etc/caddy/Caddyfile:ro
+      - production_caddy:/data
+    networks: [edge]
+secrets:
+  db_password:
+    file: ${PRODUCTION_RUNTIME_DIR}/db.password
+networks:
+  mail_egress: {}
+volumes:
+  production_postgres:
+  production_odoo:
+  production_caddy:

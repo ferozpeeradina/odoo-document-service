@@ -1,8 +1,14 @@
 .env
 .env.*
-artifacts/
+artifacts/*
 runtime/
 vendor/
 __pycache__/
 *.pyc
 node_modules/
+service-runtime/
+runtime-test-venv/
+!artifacts/implementation-progress.json
+!artifacts/implementation-summary.json
+
+service/verify-key.txt

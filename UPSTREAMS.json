@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "26316599be8a48e4b62163d1e29ed7f680a39f1b",
+  "repository": "https://github.com/ferozpeeradina/odoo-document-service",
+  "odoo": {
+    "source": "https://github.com/ferozpeeradina/odoo-community",
+    "image": "odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd",
+    "license": "LGPL-3.0"
+  },
+  "sign": {
+    "source": "https://github.com/ferozpeeradina/odoo-community-sign.git",
+    "commit": "3b768318bc5eaccb79535337478f49d59d17d0b1",
+    "license": "AGPL-3.0"
+  },
+  "dms": {
+    "source": "https://github.com/ferozpeeradina/odoo-community-dms.git",
+    "commit": "1a3098d1d6bbce6a38d06d9f361db319e7858fa3",
+    "license": "LGPL-3.0"
+  },
+  "bridgeLicense": "AGPL-3.0-or-later",
+  "sealDependencies": {
+    "pyHanko": "MIT",
+    "cryptography": "Apache-2.0 OR BSD-3-Clause"
+  }
+}

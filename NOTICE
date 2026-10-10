@@ -1,0 +1,12 @@
+This service reuses Odoo Community, OCA Sign and OCA DMS. Their original
+copyrights, authorship and licences remain in their pinned source trees.
+Fork hosting does not confer exclusive ownership of upstream software.
+The Packaging POC bridge and new service addons are offered under AGPL-3.0-or-later.
+See UPSTREAMS.json for source, pins and component licences. The complete AGPL
+licence is LICENSE. Operators must offer Corresponding Source, including their
+modifications, to remote users as required by AGPL section 13. The public source
+offer is https://github.com/ferozpeeradina/odoo-document-service; deploy only a
+commit whose matching source is actually available there. This local unpushed
+implementation is not yet a published source release.
+Dependencies retain their own licences. No exclusive upstream ownership,
+CA trust, trusted timestamps or legal signature suitability is claimed.
