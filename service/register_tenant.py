@@ -1,6 +1,6 @@
 """Register one tenant/operator and scoped credential, without printing secret values."""
 import argparse, hashlib, os, pathlib, secrets, subprocess
-p=argparse.ArgumentParser();p.add_argument('--tenant',required=True);p.add_argument('--operator',required=True);p.add_argument('--project',action='append',default=[]);p.add_argument('--tenant-wide',action='store_true');p.add_argument('--credential-file',required=True);p.add_argument('--production-runtime-dir');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--tenant',required=True);p.add_argument('--operator',required=True);scope=p.add_mutually_exclusive_group(required=True);scope.add_argument('--project',action='append',default=[]);scope.add_argument('--tenant-wide',action='store_true');p.add_argument('--credential-file',required=True);p.add_argument('--production-runtime-dir');a=p.parse_args()
 path=pathlib.Path(a.credential_file)
 if not path.exists():
     fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
