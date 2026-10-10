@@ -1,0 +1,116 @@
+{
+  "result": "PASS_TEST_IMPLEMENTATION",
+  "sourceCommit": "26316599be8a48e4b62163d1e29ed7f680a39f1b",
+  "branch": "codex/production-document-service",
+  "productionReady": false,
+  "publicDeployment": "NOT TESTED; coordinator acceptance required",
+  "tests": [
+    {
+      "evidence": "artifacts/artifact-tests.json",
+      "result": "PASS",
+      "assertions": 18
+    },
+    {
+      "evidence": "artifacts/backup-restore-tests.json",
+      "result": "PASS",
+      "assertions": 5
+    },
+    {
+      "evidence": "artifacts/callback-tests.json",
+      "result": "PASS",
+      "assertions": 8
+    },
+    {
+      "evidence": "artifacts/concurrency-tests.json",
+      "result": "PASS",
+      "assertions": 5
+    },
+    {
+      "evidence": "artifacts/credential-tests.json",
+      "result": "PASS",
+      "assertions": 5
+    },
+    {
+      "evidence": "artifacts/http-tests.json",
+      "result": "PASS",
+      "assertions": 30
+    },
+    {
+      "evidence": "artifacts/otp-negative-tests.json",
+      "result": "PASS",
+      "assertions": 13
+    },
+    {
+      "evidence": "artifacts/otp-ui-tests.json",
+      "result": "PASS",
+      "assertions": 20
+    },
+    {
+      "evidence": "artifacts/outbox-tests.json",
+      "result": "PASS",
+      "assertions": 6
+    },
+    {
+      "evidence": "artifacts/privacy-scope-tests.json",
+      "result": "PASS",
+      "assertions": 75
+    },
+    {
+      "evidence": "artifacts/restart-tests.json",
+      "result": "PASS",
+      "assertions": 21
+    },
+    {
+      "evidence": "artifacts/sealer-boundary-tests.json",
+      "result": "PASS",
+      "assertions": 3
+    },
+    {
+      "evidence": "artifacts/tamper-http-tests.json",
+      "result": "PASS",
+      "assertions": 9
+    },
+    {
+      "evidence": "artifacts/uploads-template-tests.json",
+      "result": "PASS",
+      "assertions": 15
+    }
+  ],
+  "reusedEvidence": [
+    "otp-negative-tests.json",
+    "outbox-tests.json",
+    "uploads-template-tests.json"
+  ],
+  "integrationGaps": {
+    "documentSpecificPrivacy": "PASS",
+    "approvedOrderContract": "PASS",
+    "durableCompletionCallback": "PASS fake sink only",
+    "tenantWideAndNoProjectLedger": "PASS",
+    "authenticatedIsolatedSealer": "PASS"
+  },
+  "notTested": [
+    "public DNS/TLS deployment",
+    "production injected credentials and certificate",
+    "real Resend delivery",
+    "live Packaging completion callback",
+    "Packaging application wiring and download proxy",
+    "CA trust or trusted timestamps (not implemented or claimed)"
+  ],
+  "limitations": [
+    "Service seal attests service artifacts; recipient events attest mailbox verification, not legal identity.",
+    "Bounded outbox attempts can exhaust and require private operator requeue preserving identity.",
+    "Odoo currently runs as root inside its isolated container; private seal key is never mounted."
+  ],
+  "followUps": [
+    "Coordinator source publication and deployment acceptance",
+    "Non-root injected secret ownership arrangement",
+    "Optional template visual polish using existing Odoo tooling"
+  ],
+  "testContainers": "PASS: both own TEST projects stopped; volumes retained",
+  "staticChecks": {
+    "pythonCompilation": "PASS",
+    "typeScript": "PASS",
+    "productionComposeConfiguration": "PASS",
+    "gitWhitespace": "PASS"
+  }
+}

@@ -1,0 +1,92 @@
+name: agentfleet-document-service-test-final
+services:
+  db:
+    image: postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [service_postgres:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U odoo']
+      interval: 3s
+      retries: 20
+  odoo:
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    user: '0:0'
+    entrypoint: [odoo]
+    command: ['--config=/run/config/odoo.conf']
+    depends_on:
+      db: {condition: service_healthy}
+      sealer: {condition: service_healthy}
+    environment:
+      DOCUMENT_SERVICE_MODE: test
+      PUBLIC_ORIGIN: https://documents.agentfleet.services
+    volumes:
+      - service_odoo:/var/lib/odoo
+      - ./service-runtime/odoo.conf:/run/config/odoo.conf:ro
+      - ./service-runtime/service.token:/run/config/service.token:ro
+      - ./service-runtime/worker.token:/run/config/worker.token:ro
+      - ./service-runtime/seal.token:/run/config/seal.token:ro
+      - ./addons:/mnt/addons:ro
+      - ./vendor/sign:/mnt/sign:ro
+      - ./vendor/dms:/mnt/dms:ro
+    networks: [private, sealing]
+  ingress:
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    entrypoint: [python3, /service/ingress.py]
+    ports: ['127.0.0.1:18079:8069']
+    volumes: ['./service:/service:ro']
+    depends_on: [odoo]
+    networks: [private, edge]
+  sealer:
+    image: python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/health",timeout=2)']
+      interval: 2s
+      timeout: 3s
+      retries: 45
+      start_period: 10s
+    entrypoint: [sh, -c, 'pip install -q --disable-pip-version-check -r /service/requirements.txt && python /service/sealer.py']
+    volumes:
+      - ./service:/service:ro
+      - ./service-runtime/seal.key:/run/seal/key.pem:ro
+      - ./service-runtime/seal.crt:/run/seal/cert.pem:ro
+      - ./service-runtime/trusted-certs:/run/seal/trusted:ro
+      - ./service-runtime/seal.token:/run/seal/auth.token:ro
+    networks: [sealing, dependencies]
+  mail:
+    environment:
+      DOCUMENT_SERVICE_MODE: test
+    user: '${SERVICE_UID:-1000}:${SERVICE_GID:-1001}'
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    entrypoint: [python3, /service/mail_worker.py]
+    volumes:
+      - ./service:/service:ro
+      - ./service-runtime/worker.token:/run/config/worker.token:ro
+      - ./service-runtime/mail-final:/run/mail
+      - ./service-runtime/callback.key:/run/config/callback.key:ro
+    networks: [private]
+    depends_on: [odoo]
+  callback:
+    profiles: [test]
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    user: '${SERVICE_UID:-1000}:${SERVICE_GID:-1001}'
+    entrypoint: [python3, /service/callback_sink.py]
+    volumes:
+      - ./service:/service:ro
+      - ./service-runtime/callback.key:/run/config/callback.key:ro
+      - ./service-runtime/mail-final:/run/mail
+    networks: [private]
+secrets:
+  db_password:
+    file: ./service-runtime/db.password
+networks:
+  private: {internal: true}
+  sealing: {internal: true}
+  edge: {}
+  dependencies: {}
+volumes:
+  service_postgres:
+  service_odoo:
