@@ -1,0 +1,7 @@
+{
+  "name": "packaging-odoo-poc-20261010",
+  "private": true,
+  "type": "module",
+  "scripts": {"typecheck": "tsc --noEmit", "ui": "node scripts/sign-ui.mjs"},
+  "devDependencies": {"typescript": "5.9.3", "playwright": "1.56.1", "@types/node": "24.10.0"}
+}

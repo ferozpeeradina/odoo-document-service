@@ -1,0 +1,66 @@
+Odoo Community document/sign proof of concept - 10 October 2026
+
+Decision: FAIL for production acceptance; partial feasibility demonstrated.
+
+Do not connect this sandbox to Packaging or adopt it across projects yet. Odoo QWeb and the actual OCA signing engine worked for the upstream access audit. That audit reproduced serious download and recipient-identity failures. The complete, guarded two-recipient workflow was not demonstrated.
+
+Scope and execution
+
+One independent Codex CLI implementation instance ran on toronto-dev with gpt-6.1-sol, Medium reasoning, --yolo and subagents disabled. It had a four-hour shell timeout and a 23:31:14 UTC deadline. It exited with code 1 before a final report. The terminal error concerned a request/status/retry failure; its underlying provider cause was not established. No replacement implementation instance was launched.
+
+The coordinator verified the installed modules and adapter typecheck, restarted only the existing isolated services once, and attempted the saved preparation script. The HTTP readiness check failed after a bounded wait, so validation stopped rather than starting another repair cycle. The containers were then stopped; sandbox source and persistent volumes were preserved. No Firebase record, API deployment or live provider integration was changed.
+
+Sandbox: /home/dev/projects/packaging-odoo-poc-20261010
+Odoo image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+OCA Sign revision: 3b768318bc5eaccb79535337478f49d59d17d0b1
+OCA DMS revision: 1a3098d1d6bbce6a38d06d9f361db319e7858fa3
+Sign module: 19.0.1.0.0, AGPL-3, Beta
+DMS module: 19.0.1.1.2, LGPL-3, Beta
+
+Isolation was checked directly: Postgres and Odoo had no published host ports. An ingress relay published only 127.0.0.1:18069. The Odoo/Postgres network was marked internal. All parties were synthetic example.test accounts. The bridge intercepts outgoing mail and cron jobs were disabled. Sandbox credentials and signer tokens remain in ignored runtime files and are not included in the source archive or this report.
+
+Observed results
+
+PASS - Matching Community/OCA modules installed in the isolated database.
+PASS - TypeScript adapter implements the existing DocumentService contract and typechecks. It remains explicitly fixture=true and loopback-only.
+PASS - A synthetic CAD snapshot was rendered by Odoo QWeb into a PDF for the upstream audit. The actual OCA signing engine changed its bytes during the audit; no app-side PDF rendering or signing engine was built.
+FAIL - Unrelated authenticated customer access: upstream /my/sign/<request_id>/download issued an attachment download redirect without recipient ownership enforcement.
+FAIL - Forwarded attachment link: the issued bearer attachment URL downloaded the PDF anonymously.
+FAIL - Signer authentication: an unrelated authenticated account holding Alice's link executed upstream signing as the named recipient. Anonymous possession also disclosed the PDF and recipient/signable-field information.
+NOT PROVEN - Guard addon mitigations. The addon installed, but its HTTP readiness failed after restart, so neither its access controls nor successful recipient use are accepted as validated.
+NOT TESTED - Complete contract signed by two legitimate test recipients, retrievable final signed PDF and frozen evidence certificate.
+NOT TESTED - Exact duplicate generation/signing requests and changed-input operation conflicts through the typed adapter.
+NOT TESTED - Altered snapshot, template, signing fields, completed PDF and evidence detection.
+NOT TESTED - Signed artifacts and identical certificate bytes surviving a service restart.
+
+Evidence: artifacts/upstream-tests.json records six successful runtime observations of the upstream engine/access flaws, with before/after PDF SHA-256 hashes. These observations are security failures, not passing production acceptance tests. There is no verified final signed-contract PDF or frozen certificate to deliver.
+
+Implementation preserved, not approved
+
+The sandbox includes a typed DocumentService adapter, an Odoo bridge for snapshot/version associations and operation IDs, OCA DMS storage, QWeb generation, access guards and validation scripts. The intended frozen certificate is JSON evidence derived from OCA records. Its completion and retrieval were not verified. Application-level stored hashes must not be described as cryptographic PDF signatures or an independently sealed certificate. No legal suitability claim is made.
+
+Remaining gates for a separately authorised continuation
+
+1. Establish the guarded service startup failure and obtain a clean bounded test run.
+2. Demonstrate both intended recipients through the real OCA UI, then retrieve/freeze signed PDF and evidence through the API boundary.
+3. Prove ownership across every portal, binary, attachment and artifact route; prove forwarded links cannot substitute for the intended signer.
+4. Execute duplicate, altered-document, replay and restart-persistence checks. Confirm hashes/version associations and completed-artifact retrieval.
+5. Decide production identity requirements and evidence retention/sealing. Plan backups, restore checks, patch ownership, tenant isolation and AGPL obligations before reuse across projects.
+
+Operating-cost estimate
+
+This POC provisioned no new VM or paid external service. It used already allocated toronto-dev capacity, so no additional server subscription was introduced; the existing VM bill continues. Medium Codex usage is separate. Before signing/load testing, an idle sample showed roughly 106 MiB for Odoo and 87 MiB for Postgres; that is not a production sizing or throughput test.
+
+For an eventual small, separate installation, a planning assumption of US$10-20/month for server capacity, 20% for provider backups, and US$2-5/month for a separate archive gives roughly US$15-30/month infrastructure. This is an illustrative budget, not a current hosting quote or a Canadian-residency commitment. Excludes tax, paid identity/email services, domain/IP charges where applicable, and human maintenance/support. No module subscription is included for these community modules; licensing obligations still apply.
+
+The verified Hetzner backup rate is 20% of server price with seven slots:
+https://docs.hetzner.com/cloud/billing/faq/
+The provider's public price page did not expose a usable current monetary quote during this check, so no exact machine-price claim is made:
+https://www.hetzner.com/cloud/cost-optimized/
+Pinned source references:
+https://github.com/OCA/sign/tree/3b768318bc5eaccb79535337478f49d59d17d0b1/sign_oca
+https://github.com/OCA/dms/tree/1a3098d1d6bbce6a38d06d9f361db319e7858fa3/dms
+
+Stop decision
+
+The POC has stopped well before its four-hour cap. No broader hardening, retrying implementation instance, production rollout or new feature work is included. Treat the result as evidence that the rendering/signing engines are reusable components, while the requested complete and safe document-service workflow remains unproven.

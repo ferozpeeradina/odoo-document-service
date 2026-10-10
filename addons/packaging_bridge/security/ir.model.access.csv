@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+member_admin,poc.member admin,model_poc_member,base.group_system,1,1,1,1
+template_admin,poc.template admin,model_poc_template,base.group_system,1,1,1,1
+version_admin,poc.version admin,model_poc_version,base.group_system,1,0,0,0
+operation_admin,poc.operation admin,model_poc_operation,base.group_system,1,0,0,0
+envelope_admin,poc.envelope admin,model_poc_envelope,base.group_system,1,0,0,0

@@ -1,0 +1,33 @@
+<odoo>
+  <record id="contract_report" model="ir.actions.report">
+    <field name="name">Synthetic CAD Contract</field>
+    <field name="model">poc.version</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">packaging_bridge.contract_document</field>
+  </record>
+  <template id="contract_document">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="doc">
+        <t t-call="web.basic_layout">
+          <div class="page" style="font-family: sans-serif;">
+            <h1>SYNTHETIC DEMONSTRATION — CAD CONTRACT</h1>
+            <p>Not for commercial use. All parties and inboxes are synthetic.</p>
+            <p>Project: <span t-esc="doc.project_key"/>; Document: <span t-esc="doc.document_key"/></p>
+            <p>Customer: <span t-esc="doc.snapshot['customer']"/></p>
+            <p>Supplier: <span t-esc="doc.snapshot['supplier']"/></p>
+            <p>Description: <span t-esc="doc.snapshot['description']"/></p>
+            <p>Quantity: <span t-esc="doc.snapshot['quantity']"/></p>
+            <p>Total: CAD <span t-esc="'%.2f' % (doc.snapshot['totalCents'] / 100)"/></p>
+            <p>Terms: <span t-esc="doc.snapshot['terms']"/></p>
+            <p>Frozen snapshot SHA-256: <span t-esc="doc.snapshot_hash"/></p>
+            <p>Template: <span t-esc="doc.template_key"/> / <span t-esc="doc.template_version"/></p>
+            <div style="height: 140px;"/>
+            <p>Customer signature: __________________________________</p>
+            <div style="height: 70px;"/>
+            <p>Supplier signature: __________________________________</p>
+          </div>
+        </t>
+      </t>
+    </t>
+  </template>
+</odoo>

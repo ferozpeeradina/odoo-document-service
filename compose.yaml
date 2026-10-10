@@ -1,0 +1,46 @@
+name: packaging-odoo-poc-20261010
+services:
+  db:
+    image: postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [isolated]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U odoo']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  odoo:
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    entrypoint: [odoo]
+    command: ['--config=/etc/odoo/poc.conf']
+    depends_on:
+      db: {condition: service_healthy}
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./runtime/odoo.conf:/etc/odoo/poc.conf:ro
+      - ./addons:/mnt/poc-addons:ro
+      - ./vendor/sign:/mnt/sign:ro
+      - ./vendor/dms:/mnt/dms:ro
+    networks: [isolated]
+  relay:
+    image: odoo:19.0@sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+    entrypoint: [python3, /poc/relay.py]
+    depends_on: [odoo]
+    ports: ['127.0.0.1:18069:8069']
+    volumes: ['./scripts/relay.py:/poc/relay.py:ro']
+    networks: [isolated, ingress]
+secrets:
+  db_password:
+    file: ./runtime/db.password
+networks:
+  ingress: {}
+  isolated:
+    internal: true
+volumes:
+  postgres_data:
+  odoo_data:
