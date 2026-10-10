@@ -1,7 +1,7 @@
 from odoo import models
 from odoo.exceptions import AccessError
 
-class GuardedSigningBinary(models.Model):
+class GuardedSigningBinary(models.AbstractModel):
     _inherit = 'ir.binary'
 
     def _find_record(self, xmlid=None, res_model='ir.attachment', res_id=None, access_token=None, field=None):

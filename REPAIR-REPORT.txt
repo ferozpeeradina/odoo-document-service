@@ -1,0 +1,121 @@
+Bounded existing-sandbox repair - 10 October 2026
+
+Result: PASS for the agreed synthetic, loopback-only POC. Production suitability
+is NOT TESTED. This report supplements REPORT.txt; it does not erase the
+previously reproduced upstream access failures.
+
+Startup cause and exact repair
+
+The existing containers were started without rebuilding, bootstrap, database
+reset or account recreation. TCP 8069 was open; both direct internal login and
+the ingress relay returned HTTP 500. The sanitized Odoo registry exception was:
+GuardedSigningBinary transforms abstract ir.binary into a non-abstract model.
+addons/packaging_sign_guard/models/binary.py now inherits models.AbstractModel
+instead of models.Model. That one-line declaration change is the only addon
+change. One Odoo restart and the existing bounded readiness check restored
+HTTP 200 at http://127.0.0.1:18069/web/login.
+
+scripts/relay.py required no change: it reached the correct upstream, and no
+proxy environment variables were present inside either container. Existing
+startup command/config mount were retained; runtime/odoo.conf was not read.
+No credentials, account/token files or raw worker logs were exposed.
+
+The existing runtime/business.json export was empty, preventing preparation.
+scripts/export-snapshot.py reads and verifies the already saved upstream-audit
+immutable synthetic version and exports its snapshot into that ignored file.
+It performs no business/account creation. scripts/prepare-journey.ts uses the
+existing OdooDocumentService adapter to generate the final contract and request
+signatures, retaining the existing Python preparation script's operation IDs
+and associations. Actual QWeb and OCA engines remain responsible for rendering
+and signing. fixture=true and the adapter's loopback restriction are unchanged.
+
+Actual validation results
+
+PASS - TypeScript typecheck and Python compilation of changed/new Python files.
+PASS - Existing adapter-test.ts: 13 checks, including exact generate/sign/upload
+replays, changed-input conflicts, cross-method operation-ID conflict, one
+document version, pending state, and false request association rejection.
+PASS - Existing guarded-access.py: 11 checks. Unrelated download, anonymous and
+forwarded content/document/info/sign routes are denied; the leaked legacy
+attachment token cannot retrieve a PDF; Alice still downloads her own request.
+PASS - Existing acceptance.py security: 12 checks. Tenant/version access,
+recipient signing, malformed/missing signature and field metadata guards,
+failed-signature state and direct binary access checks passed unchanged.
+PASS - Existing sign-ui.mjs Alice journey in her authenticated browser context.
+PASS - Existing acceptance.py partial: 4 checks confirm one persisted signature,
+partial status and unavailable final PDF/evidence.
+PASS - Existing sign-ui.mjs Bob journey in a separate authenticated context.
+PASS - Existing acceptance.py complete: 15 checks confirm signed status, three
+retrievable artifacts, exact downloaded bytes, certificate version/project/
+tenant association, two distinct signer identities/times, two sign audit events,
+matching hashes, changed signed PDF bytes and unrelated final-artifact denial.
+PASS - New tamper-validation.py: 8 actual stored-data mutations: JSON snapshot,
+signing fields, unsigned PDF, frozen template XML, active signing PDF, completed
+PDF, frozen evidence JSON and signer completion state. Each service artifact
+read raised integrity_failed. Every mutation ran inside a transaction savepoint
+and rolled back; baseline hashes/associations were checked after every rollback.
+The legitimate signed update still succeeded; no tamper transaction committed.
+PASS - Existing acceptance.py restart: 15 checks after restarting all three
+existing containers and waiting for readiness. All three downloaded artifacts
+match the pre-restart files byte-for-byte; hashes and associations are unchanged.
+PASS - Isolation inspection: Odoo and Postgres publish no host ports; relay
+publishes only 127.0.0.1:18069; database/Odoo network remains internal.
+
+All 78 recorded adapter/access/acceptance/tamper checks passed. No acceptance
+assertion was weakened. Startup HTTP 500 and empty-export preparation failure
+were observed and repaired. No unresolved access failure was observed in the
+executed guarded tests. Unrun scenarios are NOT TESTED, not implied passes.
+
+Named nonsecret evidence (retained locally under ignored artifacts/)
+
+adapter-tests.json; guarded-access.json; acceptance-security.json;
+acceptance-partial.json; acceptance-complete.json; acceptance-restart.json;
+tamper-validation.json; repair-phases.json; repair-progress.json;
+repair-summary.json; alice-ui-before.png; alice-ui-filled.png;
+alice-ui-complete.png; bob-ui-before.png; bob-ui-filled.png; bob-ui-complete.png.
+
+Verified retrieved artifacts, with SHA-256 (also checked after restart):
+unsigned-contract.pdf - 9729 bytes
+c500893f53fac51e0b101a60c9436bdf308a330c519cfbbcfe7db943f95d4c27
+signed-contract.pdf - 101776 bytes
+de7309e4970b14aab869c0e9eac35a280106c22768639da47275cc9f5ed044aa
+frozen-certificate.json - 2452 bytes
+75115f98deb5040d3e25e199dd97b1c8eccfbdb8fe7dd8221360fd00a572b00c
+
+Precise remaining gaps and limitations
+
+Tamper reads were tested at the authenticated provider service boundary inside
+the Odoo shell, using rollback-only storage mutations. HTTP tamper responses
+during committed corruption are NOT TESTED. Ordinary HTTP access/retrieval and
+restart checks were actually run. Rewriting both database bytes and integrity
+anchors by an administrator is not prevented or independently detected.
+Application database SHA-256 hashes and OCA signature images/audit records are
+not an independently sealed cryptographic PDF signature or trusted timestamp.
+Synthetic local authenticated accounts do not establish mailbox verification,
+OTP, real human identity, legal enforceability or production identity assurance.
+Concurrent operation races, crash recovery, backup restore, load/throughput,
+production DMS, real customer data, live providers and broader route/tenant
+penetration testing are NOT TESTED. No production rollout is approved here.
+
+Pins, licenses and cost
+
+compose.yaml, dependency pins, vendor source and licenses are unchanged:
+Odoo 19.0 image sha256:dd9013e669caaa23d26765dc55814655eaeecca7cfc2c265dbabae913bce22fd
+Postgres 16 image sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+OCA Sign 3b768318bc5eaccb79535337478f49d59d17d0b1; 19.0.1.0.0; AGPL-3; Beta.
+OCA DMS 1a3098d1d6bbce6a38d06d9f361db319e7858fa3; 19.0.1.1.2; LGPL-3; Beta.
+No new VM subscription, cloud resources or paid provider were introduced.
+Existing VM billing and Codex usage continue; this pass did not meter a dollar
+cost. Prior illustrative US$15-30/month infrastructure estimate remains an
+estimate, not a current quote, production sizing or residency commitment.
+
+Final state
+
+Only this sandbox was changed. No GitHub push, Firebase integration or live
+email/payment/AI/signing provider was called. Existing accounts, credentials,
+database, volumes, PROMPT.md, STATUS.md and unrelated files were preserved.
+The three sandbox containers were stopped with docker compose stop; volumes
+were preserved. Postgres and Odoo exited 0; relay exited 137 when Compose
+finished stopping it. All three are stopped; relay graceful shutdown is not
+claimed. Necessary repair source/tests/report are committed locally on
+codex/odoo-poc; the final response supplies the resulting commit ID.

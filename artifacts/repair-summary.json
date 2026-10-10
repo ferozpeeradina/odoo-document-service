@@ -1,0 +1,131 @@
+{
+  "result": "PASS",
+  "scope": "existing synthetic loopback-only sandbox POC; production NOT TESTED",
+  "branch": "codex/odoo-poc",
+  "base_commit": "ef1f064fc8ca29375eff2f8f61545d9adff0eca8",
+  "startup": {
+    "result": "PASS",
+    "cause": "concrete Model extension of abstract ir.binary prevented registry loading; upstream HTTP 500",
+    "repair": "GuardedSigningBinary now inherits models.AbstractModel",
+    "relay_changed": false,
+    "config_read": false
+  },
+  "preparation": {
+    "result": "PASS",
+    "saved_snapshot": "verified immutable upstream-audit version exported read-only",
+    "engine": "existing QWeb and OCA",
+    "adapter": "existing TypeScript OdooDocumentService",
+    "fixture": true
+  },
+  "tests": [
+    {
+      "artifact": "artifacts/adapter-tests.json",
+      "result": "PASS",
+      "checks": 13
+    },
+    {
+      "artifact": "artifacts/guarded-access.json",
+      "result": "PASS",
+      "checks": 11
+    },
+    {
+      "artifact": "artifacts/acceptance-security.json",
+      "result": "PASS",
+      "checks": 12
+    },
+    {
+      "artifact": "artifacts/acceptance-partial.json",
+      "result": "PASS",
+      "checks": 4
+    },
+    {
+      "artifact": "artifacts/acceptance-complete.json",
+      "result": "PASS",
+      "checks": 15
+    },
+    {
+      "artifact": "artifacts/acceptance-restart.json",
+      "result": "PASS",
+      "checks": 15
+    },
+    {
+      "artifact": "artifacts/tamper-validation.json",
+      "result": "PASS",
+      "checks": 8
+    }
+  ],
+  "recorded_checks": 78,
+  "ui": {
+    "alice": "PASS; own authenticated Playwright context; persisted partial status",
+    "bob": "PASS; separate authenticated Playwright context; persisted signed status"
+  },
+  "tamper": {
+    "cases": 8,
+    "read_boundary": "authenticated provider artifacts method inside Odoo shell",
+    "mutation_committed": false,
+    "restore": "savepoint rollback; baseline hashes and associations verified after every case"
+  },
+  "artifacts": [
+    {
+      "file": "artifacts/unsigned-contract.pdf",
+      "retrieved": true,
+      "byte_compared_before_and_after_restart": true,
+      "bytes": 9729,
+      "sha256": "c500893f53fac51e0b101a60c9436bdf308a330c519cfbbcfe7db943f95d4c27"
+    },
+    {
+      "file": "artifacts/signed-contract.pdf",
+      "retrieved": true,
+      "byte_compared_before_and_after_restart": true,
+      "bytes": 101776,
+      "sha256": "de7309e4970b14aab869c0e9eac35a280106c22768639da47275cc9f5ed044aa"
+    },
+    {
+      "file": "artifacts/frozen-certificate.json",
+      "retrieved": true,
+      "byte_compared_before_and_after_restart": true,
+      "bytes": 2452,
+      "sha256": "75115f98deb5040d3e25e199dd97b1c8eccfbdb8fe7dd8221360fd00a572b00c"
+    }
+  ],
+  "not_tested": [
+    "production identity and legal suitability",
+    "HTTP responses while committed stored data is corrupt",
+    "administrator rewriting bytes and integrity anchors",
+    "concurrent operation races and crash recovery",
+    "backup restore and throughput",
+    "live providers and production DMS",
+    "broader penetration testing"
+  ],
+  "limitations": [
+    "Application database hashes and OCA signing images/audit are not an independently sealed cryptographic PDF signature or trusted timestamp.",
+    "Synthetic sessions do not prove real human or mailbox identity."
+  ],
+  "pins_licenses_changed": false,
+  "costs": {
+    "new_vm_subscription": false,
+    "new_cloud_resources": false,
+    "prior_monthly_usd_estimate": "15-30; illustrative estimate, not a quote",
+    "codex_dollar_cost": "not metered"
+  },
+  "containers": [
+    {
+      "service": "db",
+      "state": "exited",
+      "exit_code": 0
+    },
+    {
+      "service": "odoo",
+      "state": "exited",
+      "exit_code": 0
+    },
+    {
+      "service": "relay",
+      "state": "exited",
+      "exit_code": 137
+    }
+  ],
+  "volumes_preserved": true,
+  "report": "REPAIR-REPORT.txt",
+  "elapsed_minutes": 4.83
+}
