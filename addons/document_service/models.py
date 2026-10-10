@@ -65,11 +65,15 @@ class Version(models.Model):
     def _presentation(self):
         from .presentation import presentation
         return presentation(self.snapshot,self.template_key)
-    def _descriptor(self): return dict(super()._descriptor(),projectId=self.project_key or None,fixture=fixture())
+    def _descriptor(self):
+        result=dict(super()._descriptor(),fixture=fixture())
+        if self.project_key: result['projectId']=self.project_key
+        else: result.pop('projectId',None)
+        return result
 
 class Template(models.Model):
     _inherit='poc.template'
-    def _register_service(self,key):
+    def _register_service(self,key,version="1"):
         import uuid
         from lxml import etree
         source=self.env.ref('document_service.'+key)
@@ -77,8 +81,8 @@ class Template(models.Model):
         arch=etree.tostring(tree,encoding='unicode')
         view=self.env['ir.ui.view'].create(dict(name=view_key,type='qweb',key=view_key,arch_db=arch))
         report=self.env['ir.actions.report'].create(dict(name=key,model='poc.version',report_type='qweb-pdf',report_name=view_key))
-        f=self.env['poc.provider']._file('template-'+key+'-1.xml',arch.encode())
-        return self.create(dict(key=key,version='1',view_id=view.id,report_id=report.id,arch_file_id=f.id,arch_hash=digest(arch.encode())))
+        f=self.env['poc.provider']._file('template-'+key+'-'+version+'.xml',arch.encode())
+        return self.create(dict(key=key,version=version,view_id=view.id,report_id=report.id,arch_file_id=f.id,arch_hash=digest(arch.encode())))
 
 class Envelope(models.Model):
     _inherit='poc.envelope'
@@ -168,7 +172,8 @@ class Provider(models.AbstractModel):
                 snap=input['snapshot']; key=input['templateId']
                 if not isinstance(snap,dict): raise ValidationError('snapshot_required')
                 if key=='ledger_statement':
-                    if not all(k in snap for k in ('organisation','invoices','receipts','allocations','adjustments')): raise ValidationError('prerequisite_missing: saved ledger records')
+                    required_ledger=('organisation','purchaseOrders','factoryPayments','factoryAdjustments') if snap.get('organisation',{}).get('data',{}).get('type')=='factory' else ('organisation','invoices','receipts','allocations','adjustments')
+                    if not all(k in snap for k in required_ledger): raise ValidationError('prerequisite_missing: saved ledger records')
                 else:
                     src=snap.get('source',{})
                     if not all(k in src for k in ('kind','id','revision','data')): raise ValidationError('prerequisite_missing: saved source')
@@ -178,7 +183,7 @@ class Provider(models.AbstractModel):
                     data=src['data']; parties=snap.get('parties',{})
                     required=['business','factory'] if key=='purchase_order' else ['business','customer']
                     if not all(isinstance(parties.get(k),dict) and parties[k].get('name') for k in required): raise ValidationError('prerequisite_missing: saved normalized parties')
-                    if key in ('purchase_order','packing_list','invoice') and not data.get('lines'): raise ValidationError('prerequisite_missing: saved lines')
+                    if key in ('purchase_order','packing_list','invoice') and not (data.get('items') or data.get('lines') if key=='packing_list' else data.get('lines')): raise ValidationError('prerequisite_missing: saved lines')
                     if key in ('purchase_order','invoice') and 'totalCents' not in data: raise ValidationError('prerequisite_missing: saved total')
                     if key=='contract' and not (src['kind']=='orders' and data.get('status')=='approved' and data.get('approvedBy') and data.get('approvedAt') and isinstance(data.get('terms'),str) and data.get('terms').strip()): raise ValidationError('prerequisite_missing: approved order terms')
                 t=self.env['poc.template'].sudo().search([('key','=',key),('version','=',input['templateVersion'])],limit=1)

@@ -88,11 +88,13 @@ def otp_verify(code,stored):
     salt,value=stored.split('$')
     return consteq(value,hashlib.pbkdf2_hmac('sha256',code.encode(),bytes.fromhex(salt),200000).hex())
 
+SOURCE_OFFER = '<p><a href="https://github.com/ferozpeeradina/odoo-document-service">Source code</a></p>'
+
 class Recipient(http.Controller):
     @http.route('/recipient/<int:request_id>',type='http',auth='public',methods=['GET'])
     def landing(self,request_id,**kw):
         # Request locator conveys no recipient information or authentication.
-        return request.make_response('<!doctype html><title>Verify your mailbox</title><h1>Verify your mailbox</h1><form method="post" action="/recipient/'+str(request_id)+'/otp"><input name="email" type="email" required><button>Email verification code</button></form>',headers=[('Cache-Control','no-store')])
+        return request.make_response('<!doctype html><title>Verify your mailbox</title><h1>Verify your mailbox</h1><form method="post" action="/recipient/'+str(request_id)+'/otp"><input name="email" type="email" required><button>Email verification code</button></form>'+SOURCE_OFFER,headers=[('Cache-Control','no-store')])
     @http.route('/recipient/<int:request_id>/otp',type='http',auth='public',csrf=False,methods=['POST'])
     def otp(self,request_id,**kw):
         try:
@@ -110,7 +112,7 @@ class Recipient(http.Controller):
                 code=str(secrets.randbelow(1000000)).zfill(6)
                 c=challenges.create(dict(signer_id=s.id,version_id=e.version_id.id,code_hash=otp_hash(code),recipient_email=s.partner_id.email,recipient_name=s.partner_id.name,expires=now+datetime.timedelta(minutes=5)))
                 request.env['document.outbox']._queue('otp:'+str(c.id),email,'Document mailbox verification','Verification code: '+code+'\nExpires in five minutes. Request '+str(request_id))
-            return request.make_response('<form method="post" action="/recipient/'+str(request_id)+'/verify"><input name="email" type="email" value="'+html.escape(email,quote=True)+'" required><input name="code" autocomplete="one-time-code" required><button>Verify and sign</button></form>',headers=[('Cache-Control','no-store')])
+            return request.make_response('<form method="post" action="/recipient/'+str(request_id)+'/verify"><input name="email" type="email" value="'+html.escape(email,quote=True)+'" required><input name="code" autocomplete="one-time-code" required><button>Verify and sign</button></form>'+SOURCE_OFFER,headers=[('Cache-Control','no-store')])
         except Exception: return answer({'error':'verification_unavailable'},409)
     @http.route('/recipient/<int:request_id>/verify',type='http',auth='public',csrf=False,methods=['POST'])
     def verify(self,request_id,**kw):
