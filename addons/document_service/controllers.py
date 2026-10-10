@@ -110,10 +110,10 @@ class Recipient(http.Controller):
             if s and not s.signed_on:
                 e._verify(); now=fields.Datetime.now(); challenges=request.env['document.challenge'].sudo()
                 recent=challenges.search_count([('signer_id','=',s.id),('create_date','>',now-datetime.timedelta(minutes=15))])
-                if recent>=3: return answer({'error':'rate_limited'},429)
-                code=str(secrets.randbelow(1000000)).zfill(6)
-                c=challenges.create(dict(signer_id=s.id,version_id=e.version_id.id,code_hash=otp_hash(code),recipient_email=s.partner_id.email,recipient_name=s.partner_id.name,expires=now+datetime.timedelta(minutes=5)))
-                request.env['document.outbox']._queue('otp:'+str(c.id),email,'Document mailbox verification','Verification code: '+code+'\nExpires in five minutes. Request '+str(request_id))
+                if recent<3:
+                    code=str(secrets.randbelow(1000000)).zfill(6)
+                    c=challenges.create(dict(signer_id=s.id,version_id=e.version_id.id,code_hash=otp_hash(code),recipient_email=s.partner_id.email,recipient_name=s.partner_id.name,expires=now+datetime.timedelta(minutes=5)))
+                    request.env['document.outbox']._queue('otp:'+str(c.id),email,'Document mailbox verification','Verification code: '+code+'\nExpires in five minutes. Request '+str(request_id))
             return request.make_response('<form method="post" action="/recipient/'+str(request_id)+'/verify"><input name="email" type="email" value="'+html.escape(email,quote=True)+'" required><input name="code" autocomplete="one-time-code" required><button>Verify and sign</button></form>'+SOURCE_OFFER,headers=[('Cache-Control','no-store')])
         except Exception: return answer({'error':'verification_unavailable'},409)
     @http.route('/recipient/<int:request_id>/verify',type='http',auth='public',csrf=False,methods=['POST'])

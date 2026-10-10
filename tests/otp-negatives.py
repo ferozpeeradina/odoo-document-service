@@ -17,9 +17,9 @@ def capture(after):
     raise AssertionError('fake OTP delivery')
 try:
     # Pending envelope has not been used by the legitimate UI acceptance journey.
-    c=dict(t.CTX,documentId='otp-negative-contract',operationId='otp-negative-generate')
+    c=dict(t.CTX,documentId='otp-privacy-contract',operationId='otp-privacy-generate')
     v=t.call('/v1/documents',dict(context=c,input=dict(templateId='contract',templateVersion='1',snapshot=t.SNAP))).json()['versionId']
-    envelope=t.call('/v1/signature-requests',dict(context=dict(c,operationId='otp-negative-sign'),input=dict(versionId=v,signers=[dict(name='Synthetic Alice Customer',email='alice@example.test'),dict(name='Synthetic Bob Supplier',email='bob@example.test')]))).json()
+    envelope=t.call('/v1/signature-requests',dict(context=dict(c,operationId='otp-privacy-sign'),input=dict(versionId=v,signers=[dict(name='Synthetic Alice Customer',email='alice@example.test'),dict(name='Synthetic Bob Supplier',email='bob@example.test')]))).json()
     req=envelope['requestId'];path='/recipient/'+req
     after=latest_id();r=t.call(path+'/otp',{'email':'alice@example.test'},headers={});t.check('OTP challenge dispatched',r.status_code==200);code=capture(after)
     t.check('code bound to exact recipient',t.call(path+'/verify',{'email':'bob@example.test','code':code},headers={}).status_code==403)
@@ -30,8 +30,14 @@ try:
     for i in range(5):t.check('wrong OTP bounded attempt '+str(i),t.call(path+'/verify',{'email':'alice@example.test','code':'not-a-code'},headers={}).status_code==403)
     t.check('correct code locked out after attempt bound',t.call(path+'/verify',{'email':'alice@example.test','code':code},headers={}).status_code==403)
     t.check('third bounded OTP issuance',t.call(path+'/otp',{'email':'alice@example.test'},headers={}).status_code==200)
-    t.check('issuance rate limited',t.call(path+'/otp',{'email':'alice@example.test'},headers={}).status_code==429)
-    t.check('unrelated mailbox gets generic locator flow',t.call(path+'/otp',{'email':'mallory@example.test'},headers={}).status_code==200)
+    limited=t.call(path+'/otp',{'email':'alice@example.test'},headers={})
+    unrelated=t.call(path+'/otp',{'email':'mallory@example.test'},headers={})
+    t.check('issuance bound has generic success response',limited.status_code==200)
+    t.check('unrelated mailbox gets generic locator flow',unrelated.status_code==200)
+    normal=lambda text:re.sub(r'value="[^"]*"','value=""',text)
+    t.check('limited and unrelated responses indistinguishable',normal(limited.text)==normal(unrelated.text))
+    shell("assert env['document.challenge'].search_count([('signer_id.request_id','=',%s)])==3"%req)
+    t.check('silent limit still bounds issued challenges',True)
     (t.ROOT/'artifacts/otp-negative-tests.json').write_text(json.dumps(dict(result='PASS',checks=t.checks),indent=2))
 except Exception as e:
     print('FAIL '+(str(e) if isinstance(e,AssertionError) else type(e).__name__));sys.exit(1)
