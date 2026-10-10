@@ -22,7 +22,7 @@ export class HttpDocumentService implements DocumentService {
   update(context:DmsContext,input:{versionId:string;requestId:string}):Promise<{status:string}> {return this.call(`/v1/signature-requests/${encodeURIComponent(input.requestId)}/status`,{context,input});}
   artifacts(context:DmsContext,versionId:string):Promise<DmsArtifact[]> {return this.call(this.version(context,versionId)+`/artifacts?${this.query(context)}`);}
   image(context:DmsImageContext,versionId:string):Promise<DmsImage> {return this.call(this.version(context,versionId)+`/image?${this.query(context)}`);}
-  private query(context:DmsContext):string { return new URLSearchParams({...context}).toString(); }
+  private query(context:DmsContext):string { return new URLSearchParams(Object.fromEntries(Object.entries(context).filter(([,v])=>v!==undefined && v!==null))).toString(); }
   private version(context:DmsContext,id:string):string {return `/v1/documents/${encodeURIComponent(context.documentId)}/versions/${encodeURIComponent(id)}`;}
   async download(artifact:DmsArtifact):Promise<ArrayBuffer> {
     const url = new URL(artifact.url);

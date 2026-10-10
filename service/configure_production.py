@@ -16,6 +16,8 @@ cert=x509.load_pem_x509_certificate((r/'seal.crt').read_bytes())
 key=serialization.load_pem_private_key((r/'seal.key').read_bytes(),password=None)
 if b'TEST' in cert.subject.rfc4514_string().encode().upper():raise SystemExit('TEST seal certificate cannot provision production')
 if key.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)!=cert.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo):raise SystemExit('Seal key and cert do not match')
+(r/'trusted-certs').mkdir(mode=0o700)
+(r/'trusted-certs'/'initial.crt').write_bytes((r/'seal.crt').read_bytes())
 db=os.environ.get('SERVICE_DB_NAME','document_service_production')
 if not db.replace('_','').isalnum() or db=='document_service_test':raise SystemExit('Use a separate production database name')
 conf='''[options]

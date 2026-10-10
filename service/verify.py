@@ -9,14 +9,23 @@ from pyhanko.keys import load_cert_from_pemder
 from pyhanko_certvalidator import ValidationContext
 logging.disable(logging.CRITICAL)
 def canonical(v):return json.dumps(v,sort_keys=True,separators=(',',':'),ensure_ascii=True,allow_nan=False).encode()
-def verify(pdf,evidence,cert_path):
-    cert=x509.load_pem_x509_certificate(open(cert_path,'rb').read())
+def verify(pdf,evidence,cert_path,trusted_dir=None):
+    from pathlib import Path
+    from datetime import datetime, timezone
+    reader=PdfFileReader(io.BytesIO(pdf));assert len(reader.embedded_signatures)==1
+    sig=reader.embedded_signatures[0]
+    paths=[Path(cert_path)]+(list(Path(trusted_dir).glob('*.crt')) if trusted_dir and Path(trusted_dir).is_dir() else [])
+    selected=next((p for p in paths if load_cert_from_pemder(str(p)).dump()==sig.signer_cert.dump()),None)
+    assert selected is not None, 'unpinned signing certificate'
+    cert=x509.load_pem_x509_certificate(selected.read_bytes());root=load_cert_from_pemder(str(selected))
+    fingerprint=cert.fingerprint(hashes.SHA256()).hex()
+    recorded=evidence['manifest'].get('seal',{}).get('certificateSha256')
+    assert recorded is None or recorded==fingerprint
     cert.public_key().verify(base64.b64decode(evidence['signature'],validate=True),canonical(evidence['manifest']),padding.PKCS1v15(),hashes.SHA256())
     assert evidence['manifest']['hashes']['signedPdfSha256']==hashlib.sha256(pdf).hexdigest()
-    reader=PdfFileReader(io.BytesIO(pdf));assert len(reader.embedded_signatures)==1
-    sig=reader.embedded_signatures[0]; root=load_cert_from_pemder(cert_path)
-    assert sig.signer_cert.dump()==root.dump()
-    result=validate_pdf_signature(sig,signer_validation_context=ValidationContext(trust_roots=[root],allow_fetching=False))
+    # This is the sealed service's recorded completion time, not a trusted timestamp.
+    moment=datetime.fromisoformat(evidence['manifest']['frozenAt']).replace(tzinfo=timezone.utc)
+    result=validate_pdf_signature(sig,signer_validation_context=ValidationContext(trust_roots=[root],allow_fetching=False,moment=moment))
     assert result.intact and result.valid and result.trusted and result.coverage.name=='ENTIRE_FILE'
 if __name__=='__main__':
     import sys

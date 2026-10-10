@@ -195,6 +195,7 @@ class Provider(models.AbstractModel):
                 return v._descriptor()
             return self._op(method,context,input,generate)
         if method=='signRequest':
+            input=dict(input,signers=[dict(s,email=s['email'].strip().lower()) for s in input['signers']])
             # Serialize both the version and operation; different operation IDs cannot race.
             self._member(context,issue=True)
             self.env.cr.execute('SELECT pg_advisory_xact_lock(%s)',[int.from_bytes(hashlib.sha256(input['versionId'].encode()).digest()[:8],'big',signed=True)])

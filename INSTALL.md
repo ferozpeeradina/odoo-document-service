@@ -53,7 +53,7 @@ setting document.credential.active=false in private Odoo tooling. POST bodies ar
 `{context,input}`; context uses tenantId, documentId, operationId, optional
 projectId/localDocumentId/actorId. Reads require tenantId. A saved unique project
 can be inferred for GET routes; ambiguous projects require projectId. No-project
-versions return projectId=null and remain distinct from project-associated ones.
+versions return projectId omitted and remain distinct from project-associated ones.
 
 | Method | Route | Input/result |
 |---|---|---|
@@ -217,3 +217,5 @@ recovery stops traffic, restores into a NEW DB, retains separate seal keys/publi
 certificates, verifies artifacts, and changes Odoo DB configuration only after
 review. This helper never overwrites the active DB or switches traffic. Stop only
 this TEST compose; retain volumes and never run down -v to preserve records.
+
+Pinned historical public certificates live in the separately mounted trusted-certs directory outside the database. Keep the old public .crt there before switching active seal keys; never delete a certificate while its artifacts remain retained. The sealed certificate fingerprint identifies new evidence. Integrity verification uses the sealed service completion time to preserve old artifacts after certificate expiry; this is not a trusted timestamp or legal identity assurance.

@@ -7,6 +7,9 @@ def presentation(snapshot,kind):
     names=['business','factory'] if kind=='purchase_order' else ['business','customer']
     if kind=='ledger_statement' and data(snapshot.get('organisation',{})).get('type')=='factory': names=['business','factory']
     def text(value): return value if isinstance(value,str) else ''
+    if kind=='ledger_statement':
+        role='factory' if data(snapshot.get('organisation',{})).get('type')=='factory' else 'customer'
+        if not isinstance(parties.get(role),dict):parties=dict(parties,**{role:data(snapshot.get('organisation',{}))})
     safe_parties=[dict(role=n.title(),**{k:text(parties[n].get(k,'')) for k in ('name','email','address')}) for n in names if isinstance(parties.get(n),dict)]
     currency=source.get('currency') or snapshot.get('currency') or data(snapshot.get('organisation',{})).get('currency')
     if not currency:

@@ -13,7 +13,7 @@ from pyhanko_certvalidator import ValidationContext
 logging.disable(logging.CRITICAL)
 KEY='/run/seal/key.pem'; CERT='/run/seal/cert.pem'
 from verify import canonical, verify as verify_artifacts
-def verify(pdf,evidence): return verify_artifacts(pdf,evidence,CERT)
+def verify(pdf,evidence): return verify_artifacts(pdf,evidence,CERT,"/run/seal/trusted")
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args): pass
     def do_GET(self):
@@ -31,6 +31,7 @@ class Handler(BaseHTTPRequestHandler):
                 out=io.BytesIO()
                 signers.PdfSigner(signers.PdfSignatureMetadata(field_name='DocumentServiceSeal',reason='Service integrity seal; recipient identities are in signed evidence; no trusted timestamp'),signer=signer).sign_pdf(IncrementalPdfFileWriter(io.BytesIO(pdf)),output=out)
                 pdf=out.getvalue(); manifest=data['manifest']
+                manifest.setdefault('seal',{})['certificateSha256']=x509.load_pem_x509_certificate(open(CERT,'rb').read()).fingerprint(hashes.SHA256()).hex()
                 manifest['hashes']['signedPdfSha256']=hashlib.sha256(pdf).hexdigest()
                 key=serialization.load_pem_private_key(open(KEY,'rb').read(),password=None)
                 evidence={'manifest':manifest,'algorithm':'RSASSA-PKCS1-v1_5-SHA256','signature':base64.b64encode(key.sign(canonical(manifest),padding.PKCS1v15(),hashes.SHA256())).decode()}

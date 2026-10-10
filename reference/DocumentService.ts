@@ -1,5 +1,5 @@
-export interface DmsContext {tenantId:string;documentId:string;projectId:string;operationId:string;localDocumentId?:string}
-export interface DmsVersion {tenantId:string;documentId:string;projectId:string;versionId:string;fixture:boolean;localDocumentId?:string}
+export interface DmsContext {tenantId:string;documentId:string;projectId?:string;operationId:string;localDocumentId?:string}
+export interface DmsVersion {tenantId:string;documentId:string;projectId?:string;versionId:string;fixture:boolean;localDocumentId?:string}
 export interface DmsArtifact extends DmsVersion {kind:'document'|'signed_document'|'evidence';url:string}
 export interface DmsImageContext extends DmsContext {actorId:string;localDocumentId:string}
 export interface DmsImage extends DmsVersion {actorId:string;localDocumentId:string;contentType:'image/png'|'image/jpeg'|'image/webp';contentBase64:string}

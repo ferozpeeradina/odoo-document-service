@@ -48,4 +48,6 @@ if not (r/'seal.key').exists():
     cert = x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number()).not_valid_before(now-datetime.timedelta(minutes=1)).not_valid_after(now+datetime.timedelta(days=365)).add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True).add_extension(x509.KeyUsage(True,True,False,False,False,True,True,False,False), critical=True).sign(key,hashes.SHA256())
     save('seal.key', key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode())
     save('seal.crt', cert.public_bytes(serialization.Encoding.PEM).decode())
+(r/'trusted-certs').mkdir(mode=0o700,exist_ok=True)
+(r/'trusted-certs'/'initial.crt').write_bytes((r/'seal.crt').read_bytes())
 print('Isolated TEST runtime prepared (secret files mode 600).')

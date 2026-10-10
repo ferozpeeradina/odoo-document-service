@@ -61,7 +61,9 @@ class REST(http.Controller):
                     provider._member(ctx); v=provider._version(ctx,version_id)
                     e=request.env['poc.envelope'].sudo().search([('version_id','=',v.id)],limit=1)
                     if e: e._verify()
-                    if kind=='document': f=v.unsigned_file_id; mime=v.content_type
+                    if kind=='document':
+                        if v.content_type!='application/pdf': raise AccessError('image_association_required')
+                        f=v.unsigned_file_id; mime=v.content_type
                     elif kind in ('signed_document','evidence') and e and e.evidence_file_id:
                         f=e.signed_file_id if kind=='signed_document' else e.evidence_file_id; mime='application/pdf' if kind=='signed_document' else 'application/json'
                     else: return answer({'error':'artifact_unavailable'},404)

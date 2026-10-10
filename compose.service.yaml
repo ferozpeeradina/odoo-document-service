@@ -53,6 +53,7 @@ services:
       - ./service:/service:ro
       - ./service-runtime/seal.key:/run/seal/key.pem:ro
       - ./service-runtime/seal.crt:/run/seal/cert.pem:ro
+      - ./service-runtime/trusted-certs:/run/seal/trusted:ro
       - ./service-runtime/seal.token:/run/seal/auth.token:ro
     networks: [sealing, dependencies]
   mail:

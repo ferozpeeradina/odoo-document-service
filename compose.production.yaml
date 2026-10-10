@@ -27,6 +27,7 @@ services:
     volumes: !override
       - ${PRODUCTION_RUNTIME_DIR}/seal.key:/run/seal/key.pem:ro
       - ${PRODUCTION_RUNTIME_DIR}/seal.crt:/run/seal/cert.pem:ro
+      - ${PRODUCTION_RUNTIME_DIR}/trusted-certs:/run/seal/trusted:ro
       - ${PRODUCTION_RUNTIME_DIR}/seal.token:/run/seal/auth.token:ro
     networks: !override [sealing]
   mail:
